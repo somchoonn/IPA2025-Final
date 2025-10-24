@@ -5,8 +5,8 @@
 #######################################################################################
 # 1. Import libraries for API requests, JSON formatting, time, os, (restconf_final or netconf_final), netmiko_final, and ansible_final.
 import os,json,time
-import requests
 import glob
+import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder    
 from restconf_final import create as rc_create, delete as rc_delete, enable as rc_enable, disable as rc_disable, status as rc_status
 from netconf_final  import create as nc_create, delete as nc_delete, enable as nc_enable, disable as nc_disable, status as nc_status
@@ -89,13 +89,18 @@ while True:
             if ip_address not in allowed_ips:
                 responseMessage = "Error: IP address not allowed"
             else:
-                # ถ้ามีข้อความตามหลัง (ตั้งค่า)
                 if len(parts) > 3:
+                    ip_address = ipOrMethod
                     motd_text = " ".join(parts[3:])
-                    responseMessage = set_motd(motd_text)
+                    responseMessage = set_motd(ip_address,motd_text)
                 else:
-                # ถ้าไม่มีข้อความ (อ่านค่า)
                     responseMessage = get_motd(ip_address)
+        elif command == "gigabit_status" and len(parts) >= 3:
+            ip_address = ipOrMethod
+            responseMessage = gigabit_status(ip_address)
+        elif command == "showrun" and len(parts) >= 3:
+            ip_address = ipOrMethod
+            responseMessage = showrun(ip_address)
         #Check No IP /66070247 Create 
         elif ipOrMethod.lower() in ["create", "delete", "enable", "disable", "status"]:
             if current_method is None:
@@ -150,10 +155,6 @@ while True:
                                 responseMessage = nc_disable(ip_address)
                             elif command == "status":
                                 responseMessage = nc_status(ip_address)
-        elif ipOrMethod == "gigabit_status":
-            responseMessage = gigabit_status()
-        elif ipOrMethod == "showrun":
-            responseMessage = showrun()
         else:
             responseMessage = "Error: No command or unknown command"
 
@@ -171,36 +172,44 @@ while True:
         # Need to attach file if responseMessage is 'ok'; 
         # Read Send a Message with Attachments Local File Attachments
         # https://developer.webex.com/docs/basics for more detail
+        pattern = f"show_run_{student_id}_*-Exam.txt"
+        files = glob.glob(pattern)
+        if command == "showrun" and responseMessage == 'ok':
+            if not files:
+                responseMessage = "Error: No backup file found"
+                postData = {"roomId": roomIdToGetMessages, "text": responseMessage}
+                postData = json.dumps(postData)
+                HTTPHeaders = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
+            else:
+                filename = max(files, key=os.path.getctime)
+                print(f"[DEBUG] Uploading file: {filename}")
+                with open(filename, "rb") as fileobject:
+                    filetype = "text/plain"
+                    postData = {
+                        "roomId": roomIdToGetMessages,
+                        "text": f"show running config of {student_id}",
+                        "files": (os.path.basename(filename), fileobject, filetype),
+                    }
+                    postData = MultipartEncoder(postData)
+                    HTTPHeaders = {
+                        "Authorization": f"Bearer {ACCESS_TOKEN}",
+                        "Content-Type": postData.content_type,
+                    }
 
-        if ipOrMethod == "showrun" and responseMessage == 'ok':
-            filename = f"show_run_{student_id}_R1-Exam.txt"
-            fileobject = open(filename, "rb")  
-            filetype = "text/plain"
-            postData = {
-                "roomId": roomIdToGetMessages,
-                "text": f"show running config of {student_id}",
-                "files": (filename, fileobject, filetype),
-            }
-            postData = MultipartEncoder(postData)
-            HTTPHeaders = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
-            "Content-Type": postData.content_type,
-            }
-        # other commands only send text, or no attached file.
+                    r = requests.post(
+                        "https://webexapis.com/v1/messages",
+                        data=postData,
+                        headers=HTTPHeaders,
+                    )
+                    print(f"[DEBUG] Status: {r.status_code} {r.text}")
+
         else:
             postData = {"roomId": roomIdToGetMessages, "text": responseMessage}
             postData = json.dumps(postData)
+            HTTPHeaders = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
 
-            # the Webex Teams HTTP headers, including the Authoriztion and Content-Type
-            HTTPHeaders = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}   
-
-        # Post the call to the Webex Teams message API.
-        r = requests.post(
-            "https://webexapis.com/v1/messages",
-            data=postData,
-            headers=HTTPHeaders,
-        )
-        if not r.status_code == 200:
-            raise Exception(
-                "Incorrect reply from Webex Teams API. Status code: {}".format(r.status_code)
+            r = requests.post(
+                "https://webexapis.com/v1/messages",
+                data=postData,
+                headers=HTTPHeaders,
             )
