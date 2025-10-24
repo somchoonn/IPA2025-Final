@@ -136,7 +136,10 @@ while True:
                                 responseMessage = nc_disable(ip_address)
                             elif command == "status":
                                 responseMessage = nc_status(ip_address)
-        
+        elif command == "gigabit_status":
+            responseMessage = gigabit_status()
+        elif command == "showrun":
+            responseMessage = showrun()
         else:
             responseMessage = "Error: No command or unknown command"
 

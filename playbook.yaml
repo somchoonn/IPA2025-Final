@@ -5,13 +5,17 @@
   connection: network_cli
 
   tasks:
-    - name: DISPLAYING THE RUNNING-CONFIG
+    - name: GATHER DEVICE FACTS (GET HOSTNAME)
+      ios_facts:
+      register: facts_output
+
+    - name: DISPLAY RUNNING-CONFIG
       ios_command:
         commands:
           - show running-config
       register: output
 
-    - name: SAVE OUTPUT TO FILE
+    - name: SAVE OUTPUT TO FILE USING REAL HOSTNAME
       copy:
         content: "{{ output.stdout[0] }}"
-        dest: "show_run_66070247_R1-Exam.txt"
+        dest: "show_run_66070247_{{ facts_output.ansible_facts.net_hostname }}-Exam.txt"
