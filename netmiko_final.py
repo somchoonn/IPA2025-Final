@@ -4,19 +4,19 @@ from pprint import pprint
 from dotenv import load_dotenv
 import textfsm
 load_dotenv()
-device_ip = os.environ.get("ROUTER_IP")
 username = "admin"
 password = "cisco"
 
-device_params = {
+
+
+
+def gigabit_status(device_ip):
+    device_params = {
     "device_type": "cisco_ios",
     "ip": device_ip,
     "username": username,
     "password": password,
-}
-
-
-def gigabit_status():
+    }
     ans = ""
     with ConnectHandler(**device_params) as ssh:
         up = 0
@@ -39,16 +39,16 @@ def gigabit_status():
         return ans
 
 
-def get_motd(ip):
-    device = {
-        "device_type": "cisco_ios",
-        "ip": ip,
-        "username": "admin",
-        "password": "cisco",
+def get_motd(device_ip):
+    device_params = {
+    "device_type": "cisco_ios",
+    "ip": device_ip,
+    "username": username,
+    "password": password,
     }
 
     try:
-        with ConnectHandler(**device) as ssh:
+        with ConnectHandler(**device_params) as ssh:
             output = ssh.send_command("show banner motd",use_textfsm=True)
             pprint(output)
             # print(output)
