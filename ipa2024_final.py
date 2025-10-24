@@ -102,7 +102,24 @@ while True:
             if current_method is None:
                 responseMessage = "Error: No method specified"
             else:
-                pass
+                if current_method == "restconf":
+                    if ip_address not in allowed_ips:
+                        responseMessage = "Error: IP address not allowed"
+                    else:
+                        if command in ["create", "delete", "enable", "disable", "status"]:
+                            # CALL RESTCONF FUNCTIONS
+                            if command == "create":
+                                responseMessage = create(ip_address)
+                            elif command == "delete":
+                                responseMessage = delete(ip_address)
+                            elif command == "enable":
+                                responseMessage = enable(ip_address)
+                            elif command == "disable":
+                                responseMessage = disable(ip_address)
+                            elif command == "status":
+                                responseMessage = status(ip_address)
+                elif current_method == "netconf":
+                    pass
                             
         else:
             responseMessage = "Error: No command or unknown command"
