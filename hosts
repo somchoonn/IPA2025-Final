@@ -1,0 +1,2 @@
+[CSR1kv]
+10.0.15.61 ansible_user=admin ansible_password=cisco ansible_network_os=ios

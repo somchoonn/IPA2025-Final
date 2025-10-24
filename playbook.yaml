@@ -1,0 +1,17 @@
+---
+- name: AUTOMATIC BACKUP OF RUNNING-CONFIG
+  hosts: CSR1kv
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+    - name: DISPLAYING THE RUNNING-CONFIG
+      ios_command:
+        commands:
+          - show running-config
+      register: output
+
+    - name: SAVE OUTPUT TO FILE
+      copy:
+        content: "{{ output.stdout[0] }}"
+        dest: "show_run_66070247_R1-Exam.txt"
