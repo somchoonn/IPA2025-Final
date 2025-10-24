@@ -7,7 +7,9 @@
 import os,json,time
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder    
-from restconf_final import create, delete, enable, disable, status
+from restconf_final import create as rc_create, delete as rc_delete, enable as rc_enable, disable as rc_disable, status as rc_status
+from netconf_final  import create as nc_create, delete as nc_delete, enable as nc_enable, disable as nc_disable, status as nc_status
+
 from netmiko_final import gigabit_status
 from ansible_final import showrun
 from dotenv import load_dotenv
@@ -88,7 +90,7 @@ while True:
                 responseMessage = "Error: No IP specified"
             
         #Check No command /66070247 [IP]
-        elif len(parts) == 2 and ipOrMethod in {"10.0.15.61","10.0.15.62","10.0.15.63","10.0.15.64","10.0.15.65"}:
+        elif len(parts) == 2 and ipOrMethod in allowed_ips:
             responseMessage = "Error: No command found."
         #Check No IP /66070247 [commands]
         elif ipOrMethod.lower() in ["create", "delete", "enable", "disable", "status"]:
@@ -109,18 +111,32 @@ while True:
                         if command in ["create", "delete", "enable", "disable", "status"]:
                             # CALL RESTCONF FUNCTIONS
                             if command == "create":
-                                responseMessage = create(ip_address)
+                                responseMessage = rc_create(ip_address)
                             elif command == "delete":
-                                responseMessage = delete(ip_address)
+                                responseMessage = rc_delete(ip_address)
                             elif command == "enable":
-                                responseMessage = enable(ip_address)
+                                responseMessage = rc_enable(ip_address)
                             elif command == "disable":
-                                responseMessage = disable(ip_address)
+                                responseMessage = rc_disable(ip_address)
                             elif command == "status":
-                                responseMessage = status(ip_address)
+                                responseMessage = rc_status(ip_address)
                 elif current_method == "netconf":
-                    pass
-                            
+                    if ip_address not in allowed_ips:
+                        responseMessage = "Error: IP address not allowed"
+                    else:
+                        if command in ["create", "delete", "enable", "disable", "status"]:
+                            # CALL RESTCONF FUNCTIONS
+                            if command == "create":
+                                responseMessage = nc_create(ip_address)
+                            elif command == "delete":
+                                responseMessage = nc_delete(ip_address)
+                            elif command == "enable":
+                                responseMessage = nc_enable(ip_address)
+                            elif command == "disable":
+                                responseMessage = nc_disable(ip_address)
+                            elif command == "status":
+                                responseMessage = nc_status(ip_address)
+        
         else:
             responseMessage = "Error: No command or unknown command"
 
