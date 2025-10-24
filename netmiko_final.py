@@ -2,6 +2,7 @@ import os
 from netmiko import ConnectHandler
 from pprint import pprint
 from dotenv import load_dotenv
+import textfsm
 load_dotenv()
 device_ip = os.environ.get("ROUTER_IP")
 username = "admin"
@@ -36,4 +37,25 @@ def gigabit_status():
         ans += f" -> {up} up, {down} down, {admin_down} administratively down"
         pprint(ans)
         return ans
-# gigabit_status()
+
+
+def get_motd(ip):
+    device = {
+        "device_type": "cisco_ios",
+        "ip": ip,
+        "username": "admin",
+        "password": "cisco",
+    }
+
+    try:
+        with ConnectHandler(**device) as ssh:
+            output = ssh.send_command("show banner motd",use_textfsm=True)
+            pprint(output)
+            # print(output)
+            if not output.strip():
+                return "Error: No MOTD Configured"
+            motd_message = output.strip()
+            return motd_message
+
+    except Exception as e:
+        return f"Error connecting to {ip}: {e}"
