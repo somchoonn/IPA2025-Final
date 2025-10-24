@@ -1,17 +1,18 @@
 #######################################################################################
 # Yourname: Chanokchon Pancome
 # Your student ID: 66070247
-# Your GitHub Repo: https://github.com/somchoonn/IPA2024-Final
+# Your GitHub Repo: https://github.com/somchoonn/IPA2025-Final
 #######################################################################################
 # 1. Import libraries for API requests, JSON formatting, time, os, (restconf_final or netconf_final), netmiko_final, and ansible_final.
 import os,json,time
 import requests
+import glob
 from requests_toolbelt.multipart.encoder import MultipartEncoder    
 from restconf_final import create as rc_create, delete as rc_delete, enable as rc_enable, disable as rc_disable, status as rc_status
 from netconf_final  import create as nc_create, delete as nc_delete, enable as nc_enable, disable as nc_disable, status as nc_status
 
-from netmiko_final import gigabit_status
-from ansible_final import showrun
+from netmiko_final import gigabit_status,get_motd
+from ansible_final import showrun,set_motd
 from dotenv import load_dotenv
 load_dotenv()
 #######################################################################################
@@ -82,6 +83,19 @@ while True:
             current_method = ipOrMethod.lower()
             responseMessage = f"Ok: {current_method.capitalize()}"
         
+        #MOTD
+        elif len(parts) >= 3 and command == "motd":
+            ip_address = ipOrMethod
+            if ip_address not in allowed_ips:
+                responseMessage = "Error: IP address not allowed"
+            else:
+                # ถ้ามีข้อความตามหลัง (ตั้งค่า)
+                if len(parts) > 3:
+                    motd_text = " ".join(parts[3:])
+                    responseMessage = set_motd(motd_text)
+                else:
+                # ถ้าไม่มีข้อความ (อ่านค่า)
+                    responseMessage = get_motd(ip_address)
         #Check No IP /66070247 Create 
         elif ipOrMethod.lower() in ["create", "delete", "enable", "disable", "status"]:
             if current_method is None:
@@ -158,7 +172,7 @@ while True:
         # Read Send a Message with Attachments Local File Attachments
         # https://developer.webex.com/docs/basics for more detail
 
-        if command == "showrun" and responseMessage == 'ok':
+        if ipOrMethod == "showrun" and responseMessage == 'ok':
             filename = f"show_run_{student_id}_R1-Exam.txt"
             fileobject = open(filename, "rb")  
             filetype = "text/plain"
