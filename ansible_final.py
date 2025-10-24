@@ -1,26 +1,31 @@
 import subprocess
 
-def showrun():
-    # read https://www.datacamp.com/tutorial/python-subprocess to learn more about subprocess
-    command = ['ansible-playbook', 'backup-playbook.yaml']
+def showrun(device_ip):
+    command = [
+        'ansible-playbook',
+        'backup-playbook.yaml',
+        '-e', f"router_ip={device_ip}"
+    ]
     result = subprocess.run(command, capture_output=True, text=True)
-    result = result.stdout
-    print(result)
-    if 'ok=2' in result:
+    print(result.stdout)
+    if 'ok=4' in result.stdout:
         return 'ok'
     else:
         return 'Error: Ansible'
     
-def set_motd(message):
+import subprocess
+
+def set_motd(ip_address, message):
     """
-    Configure MOTD banner using Ansible playbook.
+    Configure MOTD banner on a specific router using Ansible playbook.
     """
     command = [
         "ansible-playbook",
         "motd-playbook.yaml",
         "--extra-vars",
-        f"motd_message='{message}'"
+        f"router_ip={ip_address} motd_message=\"{message}\""
     ]
+
     result = subprocess.run(command, capture_output=True, text=True)
 
     if result.returncode == 0:
@@ -28,4 +33,4 @@ def set_motd(message):
         return "Ok: success"
     else:
         print(result.stderr)
-        return f"Error: No MOTD Configured"
+        return "Error: No MOTD Configured"
