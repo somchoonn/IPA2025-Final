@@ -1,0 +1,14 @@
+---
+- name: CONFIGURE MOTD BANNER
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  vars:
+    ansible_host: "{{ router_ip }}"   # 👈 receive IP from Python
+
+  tasks:
+    - name: CONFIGURE BANNER MOTD
+      ios_banner:
+        banner: motd
+        text: "{{ motd_message }}"
+        state: present

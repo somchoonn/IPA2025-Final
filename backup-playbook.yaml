@@ -1,0 +1,24 @@
+---
+- name: AUTOMATIC BACKUP OF RUNNING-CONFIG
+  hosts: all
+  gather_facts: true
+  connection: network_cli
+  vars:
+    ansible_host: "{{ router_ip }}"   # ← receive the IP from Python
+
+  tasks:
+    - name: DISPLAYING THE RUNNING-CONFIG
+      ios_command:
+        commands:
+          - show running-config
+      register: output
+
+    - name: SAVE OUTPUT TO FILE
+      copy:
+        content: "{{ output.stdout[0] }}"
+        dest: "show_run_66070247_{{ ansible_net_hostname }}-Exam.txt"
+      delegate_to: localhost
+
+    - name: DISPLAY ROUTER HOSTNAME
+      debug:
+        msg: "Backup saved as show_run_66070247_{{ ansible_net_hostname }}-Exam.txt"
