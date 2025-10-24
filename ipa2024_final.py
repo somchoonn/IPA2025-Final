@@ -17,6 +17,9 @@ load_dotenv()
 student_id = os.environ.get("STUDENT_ID")
 ACCESS_TOKEN = os.environ.get("WEBEX_ACCESS_TOKEN")
 
+current_method = None
+allowed_ips = os.getenv("ALLOWED_IPS", "").split(",")
+allowed_ips = [ip.strip() for ip in allowed_ips if ip.strip()]
 #######################################################################################
 # 3. Prepare parameters get the latest message for messages API.
 
@@ -68,29 +71,42 @@ while True:
     # check if the text of the message starts with the magic character "/" followed by your studentID and a space and followed by a command name
     #  e.g.  "/66070123 create"
     if message.startswith(f"/{student_id}"):
-
-        # extract the command
-        command = message.split()[1].strip()
-        print(command)
-
-# 5. Complete the logic for each command
-
-        if command == "create":
-            responseMessage = create()
-        elif command == "delete":
-            responseMessage = delete()
-        elif command == "enable":
-            responseMessage = enable()
-        elif command == "disable":
-            responseMessage = disable()
-        elif command == "status":
-            responseMessage = status()
-        elif command == "gigabit_status":
-            responseMessage = gigabit_status()
-        elif command == "showrun":
-            responseMessage = showrun()
+        parts = message.split()
+        ipOrMethod = parts[1].strip()
+        command = parts[2].strip() if len(parts) > 2 else None #for index out of range
+        
+        #Check Method
+        if ipOrMethod.lower() == "restconf" or ipOrMethod.lower() == "netconf":
+            current_method = ipOrMethod.lower()
+            responseMessage = f"Ok: {current_method.capitalize()}"
+        
+        #Check No IP /66070247 Create 
+        elif ipOrMethod.lower() in ["create", "delete", "enable", "disable", "status"]:
+            if current_method is None:
+                responseMessage = "Error: No method specified"
+            else:
+                responseMessage = "Error: No IP specified"
+            
+        #Check No command /66070247 [IP]
+        elif len(parts) == 2 and ipOrMethod in {"10.0.15.61","10.0.15.62","10.0.15.63","10.0.15.64","10.0.15.65"}:
+            responseMessage = "Error: No command found."
+        #Check No IP /66070247 [commands]
+        elif ipOrMethod.lower() in ["create", "delete", "enable", "disable", "status"]:
+            if current_method is None:
+                responseMessage = "Error: No method specified"
+            else:
+                responseMessage = "Error: No IP specified"
+        #Check IP Command /66070247 [allowed IPs] [command]
+        elif len(parts) >= 3:
+            ip_address = ipOrMethod
+            if current_method is None:
+                responseMessage = "Error: No method specified"
+            else:
+                pass
+                            
         else:
             responseMessage = "Error: No command or unknown command"
+
         
 # 6. Complete the code to post the message to the Webex Teams room.
 
